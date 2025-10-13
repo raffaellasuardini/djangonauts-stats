@@ -40,12 +40,6 @@ class Issue:
 
 
 @dataclasses.dataclass
-class Repo:
-    name: str
-    owner: str
-
-
-@dataclasses.dataclass
 class Results:
     prs: typing.List[PR] = dataclasses.field(default_factory=list)
     issues: typing.List[Issue] = dataclasses.field(default_factory=list)
