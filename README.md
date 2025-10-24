@@ -1,8 +1,8 @@
-# Djangonauts Stats
+# Djangonauts Statistics
 A script that retrieve the Pull Request, created and merged and Issue created by Djangonauts.
 
 # Installation 
-1. This script uses the `gh` CLI to search and filter PRs and Issues. [Check the gh CLI installation instructions](https://github.com/sakhawy/django-news-pr-filter#:~:text=gh%20CLI%20installation%20instructions).
+1. This script uses the `gh` CLI to search and filter PRs and Issues. [Check the gh CLI installation instructions](https://github.com/cli/cli#installation).
 2. After installing `gh` authenticate with a Github host.
     ```bash
     gh auth login 
