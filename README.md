@@ -63,7 +63,7 @@ options:
 ## File needed
 The script needs 2 file inside the data folder: `djangonauts.csv` and `repos.json`
 
-### djangonaut.csv
+### djangonauts.csv
 needs two arguments, Github username and Name. It's not case sensitive.
 
 example:
