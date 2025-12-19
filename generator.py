@@ -110,7 +110,7 @@ class DjangonautsReport:
                 f"{'\n\n'.join('✨ ' + pr.title + '\n' + pr.author.name + ' \n' + pr.url for pr in prs if pr.is_open()) if nr_pr_open else '\n\nNo opened PRs\n'}"
                 
                 f"{'\n\n--Closed--\n' if nr_pr_closed else ''}"
-                f"{'\n\n'.join('✨ ' + pr.title + '\n' + pr.author.name + ' \n' + pr.url for pr in prs if pr.is_closed()) if nr_pr_closed else '\n\nNo closed PRs\n'}"
+                f"{'\n\n'.join('🚧 ' + pr.title + '\n' + pr.author.name + ' \n' + pr.url for pr in prs if pr.is_closed()) if nr_pr_closed else '\n\nNo closed PRs\n'}"
 
                 f"{'\n--Issue--\n' if nr_open_issue else '\n\n--No Issue--\n\n'}"
                 f"Djangonaut Authors: {', '.join(author_name for author_name in djangonauts_issues_authors)}\n"
