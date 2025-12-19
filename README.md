@@ -1,5 +1,5 @@
 # Djangonauts Stats
-A script that retrieve the Pull Request, created and merged and Issue created by Djangonauts.
+A script that retrieve the Pull Request (open, merged, and closed but not merged) and Issue created by Djangonauts.
 
 # Installation 
 1. This script uses the `gh` CLI to search and filter PRs and Issues. [Check the gh CLI installation instructions](https://github.com/sakhawy/django-news-pr-filter#:~:text=gh%20CLI%20installation%20instructions).
@@ -19,7 +19,8 @@ A script that retrieve the Pull Request, created and merged and Issue created by
    ```
 
 # Usage
-Run `python main.py` without any arguments to pull last week's PR and Issue. The script create a `OUT.txt` inside the data folder.
+Run `python main.py` without any arguments to pull last week's PR and Issue. 
+The script create an `OUT.txt` file inside the `data` folder.
 
 Example `OUT.txt`
 
@@ -35,11 +36,19 @@ https://github.com/django/django/pull/18257
 
 No opened PRs
 
+No closed PRs
 
 --No Issue--
 
  ====================================
 ```
+
+## State of the PRs
+- **Open PRs**: Includes both open and draft Pull Requests.
+- **Merged PRs**: Pull Requests that were successfully merged.
+- **Closed PRs**: Pull Requests that were closed without being merged.  
+  These may have been closed by the author or by a repository maintainer.
+
 
 ## Options
 Options are available to choose the dates
@@ -54,17 +63,17 @@ options:
   -s, --start_date START_DATE
                         Filters PRs and Issues starting from `start_date`.e.g. 2024-01-28
   -e, --end_date END_DATE
-                        Filters PRs and Issues ending on `start_date`.e.g. 2024-01-28
+                        Filters PRs and Issues ending on `end_date`.e.g. 2024-01-28
   -v, --verbose
 
 ```
 
 
 ## File needed
-The script needs 2 file inside the data folder: `djangonauts.csv` and `repos.json`
+The script needs 2 files inside the `data` folder: `djangonauts.csv` and `repos.json`
 
 ### djangonauts.csv
-needs two arguments, Github username and Name. It's not case sensitive.
+Needs two columns: Github username and Name. It's not case sensitive.
 
 example:
 ```djangonaut.csv
