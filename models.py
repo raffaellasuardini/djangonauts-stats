@@ -25,6 +25,9 @@ class PR:
     def is_merged(self) -> bool:
         return bool(self.merged)
 
+    def is_closed(self):
+        return self.state == "CLOSED" and not bool(self.merged)
+
 
 @dataclasses.dataclass
 class Issue:
@@ -47,6 +50,8 @@ class Results:
     def get_open_prs(self) -> typing.List[PR]:
         return list(filter(lambda pr: pr.is_open(), self.prs))
 
+    def get_closed_prs(self) -> typing.List[PR]:
+        return list(filter(lambda pr: pr.is_closed(), self.prs))
     def get_open_issues(self) -> typing.List[Issue]:
         return list(filter(lambda issue: issue.is_open(), self.issues))
 
@@ -61,6 +66,9 @@ class Results:
 
     def count_merged_prs(self) -> int:
         return len(list(filter(lambda pr: pr.is_merged(), self.prs)))
+
+    def count_closed_prs(self) -> int:
+        return len(list(filter(lambda pr: pr.is_closed(), self.prs)))
 
     def count_open_issues(self) -> int:
         return len(self.get_open_issues())
