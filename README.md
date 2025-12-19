@@ -76,7 +76,7 @@ The script needs 2 files inside the `data` folder: `djangonauts.csv` and `repos.
 Needs two columns: Github username and Name. It's not case sensitive.
 
 example:
-```djangonaut.csv
+```djangonauts.csv
 Github username,Name
 raffaellasuardini,Raffaella suardini
 ```
