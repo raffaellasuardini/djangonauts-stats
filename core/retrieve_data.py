@@ -1,10 +1,9 @@
 import pandas as pd
 import json
 from core.config import logger
-from core.github_client import load_repositories
 
 
-def get_djangonauts(file="data/djangonauts.csv") -> dict:
+def get_djangonauts_from_file(file="data/djangonauts.csv") -> dict:
     """
 
     :param file:
@@ -32,37 +31,21 @@ def get_djangonauts(file="data/djangonauts.csv") -> dict:
     return djs
 
 
-def get_repos(file="data/repos.json") -> list:
+def get_repos_from_file(file="data/repos.json") -> list:
     """
 
     :param file: default is data/repos.json
-    :return: a list string for the repositories for example "django/django"
+    :return: a list of dictionaries with three keys: owner (str), repos (list of str) and members (list of str)
+
     """
     try:
         with open(file) as json_file:
-            json_data = json.load(json_file)
+            data = json.load(json_file)
     except FileNotFoundError:
         logger.error(f"File not found: {file}")
         return []
+    for entry in data:
+        entry['members'] = [m.lower() for m in entry.get('members', [])]
 
-    repo_list = []
-    for element in json_data:
-        if len(element['repos']) <= 1:
-
-            if element['repos'][0] == '*' or not element['repos'][0]:
-                repo_list.extend(get_repos_from_owner(element['owner']))
-            else:
-                for repo in element['repos']:
-                    repo_list.append(f"{element['owner']}/{repo}")
-
-    return repo_list
-
-
-def get_repos_from_owner(owner) -> list:
-    """
-
-    :param owner:
-    :return: a list of owner/repo
-    """
-    response = load_repositories(owner)
-    return [owner + "/" + item.pop('name') for item in response]
+    logger.info(f"Loaded {len(data)} repo configs from {file}")
+    return data
