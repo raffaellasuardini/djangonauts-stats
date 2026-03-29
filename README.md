@@ -2,17 +2,13 @@
 A script that retrieve the Pull Request (open, merged, and closed but not merged) and Issue created by Djangonauts.
 
 # Installation 
-1. This script uses the `gh` CLI to search and filter PRs and Issues. [Check the gh CLI installation instructions](https://github.com/sakhawy/django-news-pr-filter#:~:text=gh%20CLI%20installation%20instructions).
-2. After installing `gh` authenticate with a Github host.
-    ```bash
-    gh auth login 
-    ```
-3. Create a venv :
+1. This script uses the `PyGithub` to search and filter PRs and Issues.
+2. Create a venv :
    ```bash 
    python3 -m venv venv
    source venv/bin/activate
    ```
-4. Install `uv` and then the dependency:
+3. Install `uv` and then the dependency:
     ```bash
    pip install uv
    uv sync
@@ -82,29 +78,34 @@ raffaellasuardini,Raffaella suardini
 ```
 
 ### repos.json
-It's a list of 2 Keys "owner" and "repos". An owner can have multiple repositories. 
+It's a list of 3 Keys "owner", "repos" and "members". An owner can have multiple repositories. 
 If you need to check all the repositories of a certain owner use "*".
 ```json
 [
   {
     "owner": "django",
-    "repos": ["django"]
+    "repos": ["django"],
+    "members": ["raffaellasuardini"]
   },
   {
     "owner": "wagtail",
-    "repos": ["wagtail"]
+    "repos": ["wagtail"],
+    "members": ["raffaellasuardini"]
   },
   {
     "owner": "django-commons",
-    "repos": ["django-debug-toolbar"]
+    "repos": ["django-debug-toolbar"],
+    "members": ["raffaellasuardini"]
   },
   {
     "owner": "djangopackages",
-    "repos": ["djangopackages"]
+    "repos": ["djangopackages"],
+    "members": ["raffaellasuardini"]
   },
   {
     "owner": "django-cms",
-    "repos": ["*"]
+    "repos": ["*"],
+    "members": ["raffaellasuardini"]
   }
 ]
 ```
