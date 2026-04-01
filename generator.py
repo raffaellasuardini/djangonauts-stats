@@ -116,24 +116,69 @@ class DjangonautsReport:
         nr_open_issue = self.results.count_open_issues()
 
         with open(self.output_file, "a", encoding="utf-8") as f:
-            f.write(
-                f"\n=== Djangonauts Report ({self.start_date} → {self.end_date}) ===\n"
-                f"Open PRs: {nr_pr_open}, Merged: {nr_pr_merged}, Closed: {nr_pr_closed} , Issue: {nr_open_issue}\n"
-                f"Djangonaut Authors: {', '.join(author_name for author_name in djangonauts_prs_authors)}\n"
-                f"{'\n--Merged--\n' if nr_pr_merged else ''}"
-                f"{'\n\n'.join('🎉 ' + pr.repo + '\n' + pr.title + '\n' + pr.author.name + '\n' + pr.url for pr in prs if pr.merged) if nr_pr_merged else '\n\nNo merged PRs\n'}"
 
-                f"{'\n\n--Opened--\n' if nr_pr_open else ''}"
-                f"{'\n\n'.join('✨ ' + pr.repo + '\n' + pr.title + '\n' + pr.author.name + ' \n' + pr.url for pr in prs if pr.is_open()) if nr_pr_open else '\n\nNo opened PRs\n'}"
+            lines = [f"\n=== Djangonauts Report ({self.start_date} → {self.end_date}) ===\n"]
 
-                f"{'\n\n--Closed--\n' if nr_pr_closed else ''}"
-                f"{'\n\n'.join('🚧 ' + pr.repo + '\n' + pr.title + '\n' + pr.author.name + ' \n' + pr.url for pr in prs if pr.is_closed()) if nr_pr_closed else '\n\nNo closed PRs\n'}"
+            # Header
+            closed_prs_string = ""
+            if self.closed_prs:
+                closed_prs_string = f", Closed: {nr_pr_closed}" if nr_pr_closed else ""
 
-                f"{'\n\n--Issue--\n\n' if nr_open_issue else '\n\n--No Issue--\n\n'}"
-                f"Djangonaut Authors: {', '.join(author_name for author_name in djangonauts_issues_authors)}\n"
-                f" {'\n\n'.join('✏️ ' + i.repo + '\n' + i.title + '\n' + i.author.name + '\n' + i.url for i in issues) if nr_open_issue else ''}"
-                "\n====================================\n"
+            lines.append(f"Open PRs: {nr_pr_open}, Merged: {nr_pr_merged}{closed_prs_string}, Issue: {nr_open_issue}")
+
+            lines.append(
+                f"Djangonaut Authors: {', '.join(djangonauts_prs_authors)}"
             )
+
+            # --merged prs--
+            if nr_pr_merged:
+                lines.append(f"\n--Merged--\n")
+                lines.append("\n\n".join(
+                    f"🎉 {pr.repo}\n{pr.title}\n{pr.author.name}\n{pr.url}"
+                    for pr in prs if pr.is_merged()
+                ))
+            else:
+                lines.append(f"\n\nNo merged PRs\n")
+
+            # -- opened prs--
+            if nr_pr_open:
+                lines.append(f"\n--Opened--\n")
+                lines.append("\n\n".join(
+                    f"✨{pr.repo}\n{pr.title}\n{pr.author.name}\n{pr.url}"
+                    for pr in prs if pr.is_open()
+                ))
+            else:
+                lines.append(f"\n\nNo opened PRs\n")
+
+            # --closed prs--
+            if not self.closed_prs:
+                if nr_pr_closed:
+                    lines.append(f"\n--Closed--\n")
+                    lines.append("\n\n".join(
+                        f"🚧 {pr.repo}\n{pr.title}\n{pr.author.name}\n{pr.url}"
+                        for pr in prs if pr.is_closed()
+                    ))
+                else:
+                    lines.append("\n\nNo closed PRs\n")
+
+            # --issues--
+            if nr_open_issue:
+                lines.append("\n\n--Issue--\n")
+                lines.append(
+                    f"Djangonaut Authors: {', '.join(djangonauts_issues_authors)}\n"
+                )
+                lines.append("\n\n".join(
+                    f"✏️ {i.repo}\n{i.title}\n{i.author.name}\n{i.url}"
+                    for i in issues
+                ))
+            else:
+                lines.append("\n\n--No Issue--\n")
+
+            # outro line
+
+            lines.append("\n====================================\n")
+
+            f.write("\n".join(lines))
 
         logger.info(f"Report written to {self.output_file}")
 
