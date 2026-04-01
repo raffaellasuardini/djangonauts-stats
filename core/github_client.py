@@ -7,10 +7,11 @@ def from_list_to_string(team) -> str:
     return " ".join(f"repo:{team.owner}/{repo}" for repo in team.repos)
 
 
-def get_prs(team, members: list[str], start_date, end_date, github):
+def get_prs(team, members: list[str], start_date, end_date, github, is_merged=False):
     repos_string = from_list_to_string(team)
     members_str = " ".join(f"author:{m}" for m in members)
-    query = f'{repos_string} {members_str} type:pr created:{start_date}..{end_date}'
+    query_dates = f'created:{start_date}..{end_date}'if not is_merged else f'merged:{start_date}..{end_date}'
+    query = f'type:pr {repos_string} {members_str} {query_dates} '
     logger.info(f"Query: {query}")
     result = github.search_issues(query)
     logger.info(f"Found {result.totalCount} PRs for {team.owner}")

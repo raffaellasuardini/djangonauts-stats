@@ -1,5 +1,5 @@
 from github import Github
-
+from itertools import chain
 from models import Author, PR, Issue, Team, Results
 from core.config import logger, OUTPUT_FILE, GITHUB_TOKEN
 from core.github_client import get_prs, get_issues
@@ -38,17 +38,19 @@ class DjangonautsReport:
     def load_data_from_api(self):
         for team in self.results.teams:
 
-            team_prs = get_prs(team, team.members, self.start_date, self.end_date, self.github)
+            team_prs = get_prs(team, team.members, self.start_date, self.end_date, self.github, is_merged=False)
+            team_merged_prs = get_prs(team, team.members, self.start_date, self.end_date, self.github, is_merged=True)
             team_issues = get_issues(team, team.members, self.start_date, self.end_date, self.github)
 
-            for item in team_prs:
+            for item in chain(team_prs, team_merged_prs):
                 djangonaut_author = self._create_author(
                     login=item.user.login.lower(),
                     name=self.djangonauts_dict[item.user.login.lower()]
                 )
                 pr = self._create_pr(author=djangonaut_author, item=item)
-                self.results.prs.append(pr)
-                logger.info(f"Appended PR, total now: {len(self.results.prs)}")
+                added = self.results.add_pr(pr)
+                if added:
+                    logger.info(f"Appended PR, total now: {len(self.results.prs)}")
 
             for item in team_issues:
                 djangonaut_author = self._create_author(

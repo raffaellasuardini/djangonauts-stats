@@ -53,6 +53,15 @@ class Results:
     prs: typing.List[PR] = dataclasses.field(default_factory=list)
     issues: typing.List[Issue] = dataclasses.field(default_factory=list)
     teams: typing.List[Team] = dataclasses.field(default_factory=list)
+    _seen_pr_numbers: set[str] = dataclasses.field(default_factory=set)
+
+    def add_pr(self, pr: PR) -> bool:
+        """Add a PR to the list of PRs if it's not present"""
+        if pr.number in self._seen_pr_numbers:
+            return False
+        self._seen_pr_numbers.add(pr.number)
+        self.prs.append(pr)
+        return True
 
     def get_open_prs(self) -> typing.List[PR]:
         return list(filter(lambda pr: pr.is_open(), self.prs))

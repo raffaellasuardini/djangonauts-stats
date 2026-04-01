@@ -61,6 +61,8 @@ options:
   -e, --end_date END_DATE
                         Filters PRs and Issues ending on `end_date`.e.g. 2024-01-28
   -v, --verbose
+  --closed-prs          Shows closed PRs. Default False
+
 
 ```
 
