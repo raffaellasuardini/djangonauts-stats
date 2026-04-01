@@ -21,8 +21,12 @@ if __name__ == "__main__":
     if not start_date:
         start_date = last_week_monday
 
+    if args.closed_prs:
+        args.closed_prs = True
+
     report = DjangonautsReport(
         start_date=start_date,
         end_date=end_date,
+        closed_prs=args.closed_prs
     )
     report.run()

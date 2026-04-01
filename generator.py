@@ -8,12 +8,13 @@ import datetime
 
 
 class DjangonautsReport:
-    def __init__(self, start_date=None, end_date=None, output_file=OUTPUT_FILE):
+    def __init__(self, start_date=None, end_date=None, closed_prs=False, output_file=OUTPUT_FILE):
         today = datetime.date.today()
         self.djangonauts_dict = get_djangonauts_from_file()
         self.repos = get_repos_from_file()
         self.end_date = end_date or today
         self.start_date = start_date or (self.end_date - datetime.timedelta(days=7))
+        self.closed_prs = closed_prs
         self.output_file = output_file
         self.results = Results()
         self.create_teams(self.repos)

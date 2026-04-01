@@ -39,7 +39,9 @@ def create_argument_parser():
     )
 
     parser.add_argument(
-        '--closed',
-        action='store_true'
+        '--closed-prs',
+        action='store_true',
+        help='Shows closed PRs. Default False',
+        default=False
     )
     return parser
