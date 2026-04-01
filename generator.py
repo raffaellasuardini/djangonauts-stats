@@ -153,7 +153,7 @@ class DjangonautsReport:
                 lines.append(f"\n\nNo opened PRs\n")
 
             # --closed prs--
-            if not self.closed_prs:
+            if self.closed_prs:
                 if nr_pr_closed:
                     lines.append(f"\n--Closed--\n")
                     lines.append("\n\n".join(
