@@ -1,87 +1,106 @@
-from models import Author, PR, Issue, Results
-from core.config import logger, OUTPUT_FILE
-from core.github_client import load_prs, load_issues
-from core.retrieve_data import get_djangonauts, get_repos
+from github import Github
+from itertools import chain
+from models import Author, PR, Issue, Team, Results
+from core.config import logger, OUTPUT_FILE, GITHUB_TOKEN
+from core.github_client import get_prs, get_issues
+from core.retrieve_data import get_djangonauts_from_file, get_repos_from_file
 import datetime
-
-djangonauts_dict = get_djangonauts()
-repos = get_repos()
 
 
 class DjangonautsReport:
-    def __init__(self, start_date=None, end_date=None, output_file=OUTPUT_FILE):
+    def __init__(self, start_date=None, end_date=None, closed_prs=False, output_file=OUTPUT_FILE):
         today = datetime.date.today()
+        self.djangonauts_dict = get_djangonauts_from_file()
+        self.repos = get_repos_from_file()
         self.end_date = end_date or today
         self.start_date = start_date or (self.end_date - datetime.timedelta(days=7))
+        self.closed_prs = closed_prs
         self.output_file = output_file
         self.results = Results()
+        self.create_teams(self.repos)
 
-    def load_data(self):
+        token = GITHUB_TOKEN
+        if not token:
+            raise ValueError('GITHUB_TOKEN environment variable not set')
+        self.github = Github(token)
+
+    def create_teams(self, repos):
         for repo in repos:
-            logger.info(f"Loading data from {repo}")
+            members = repo.get("members", [])
+            team = Team(
+                owner=repo['owner'],
+                repos=repo['repos'],
+                members=members,
+            )
+            logger.info(f"created team {team}")
+            self.results.teams.append(team)
 
-            #load open pr
-            for item in load_prs(repo, self.start_date, self.end_date, 'open'):
-                author = self._create_author(item.get('author'))
-                pr = self._create_pr(item, author)
-                if author.login in djangonauts_dict.keys():
-                    self.results.prs.append(pr)
-            #load merged pr
-            for item in load_prs(repo, self.start_date, self.end_date, 'merged'):
-                author = self._create_author(item.get('author'))
-                pr = self._create_pr(item, author)
-                if author.login in djangonauts_dict.keys():
-                    self.results.prs.append(pr)
-            #load closed pr
-            for item in load_prs(repo, self.start_date, self.end_date, 'closed'):
-                author = self._create_author(item.get('author'))
-                pr = self._create_pr(item, author)
-                if author.login in djangonauts_dict.keys():
-                    self.results.prs.append(pr)
-            #load open issue
-            for item in load_issues(repo, self.start_date, self.end_date):
-                author = self._create_author(item.get('author'))
-                issue = self._create_issue(item, author)
-                if author.login in djangonauts_dict.keys():
-                    self.results.issues.append(issue)
+    def load_data_from_api(self):
+        for team in self.results.teams:
 
-    def _create_author(self, raw_author):
-        if not raw_author:
-            return None
+            team_prs = get_prs(team, team.members, self.start_date, self.end_date, self.github, is_merged=False)
+            team_merged_prs = get_prs(team, team.members, self.start_date, self.end_date, self.github, is_merged=True)
+            team_issues = get_issues(team, team.members, self.start_date, self.end_date, self.github)
+
+            for item in chain(team_prs, team_merged_prs):
+                djangonaut_author = self._create_author(
+                    login=item.user.login.lower(),
+                    name=self.djangonauts_dict[item.user.login.lower()]
+                )
+                pr = self._create_pr(author=djangonaut_author, item=item)
+                added = self.results.add_pr(pr)
+                if added:
+                    logger.info(f"Appended PR, total now: {len(self.results.prs)}")
+
+            for item in team_issues:
+                djangonaut_author = self._create_author(
+                    login=item.user.login.lower(),
+                    name=self.djangonauts_dict[item.user.login.lower()]
+                )
+                issue = self._create_issue(author=djangonaut_author, item=item)
+                self.results.issues.append(issue)
+                logger.info(f"Appended Issue, total now: {len(self.results.issues)}")
+
+    def _create_author(self, login, name):
         return Author(
-            login=raw_author.get("login", "").lower(),
-            name=raw_author.get("name", ""),
+            login=login.lower(),
+            name=name or "",
         )
 
     def _create_pr(self, item, author):
-        if not author or author.login not in djangonauts_dict.keys():
-            return None
-        if item.get('mergedAt'):
-            merged_date = datetime.datetime.strptime(item.get('mergedAt').split("T")[0], "%Y-%m-%d").date()
-        else:
-            merged_date = None
+        merged_date = None
+        if item.pull_request.merged_at:
+            merged_date = item.pull_request.merged_at.date()
 
-        return PR(
-            title=item["title"],
-            number=item["number"],
-            url=item["url"],
+        repo = item.repository_url.split("/repos/")[1]
+
+        pr = PR(
+            title=item.title,
+            number=item.number,
+            url=item.html_url,
             author=author,
-            created=datetime.datetime.strptime(item["createdAt"].split("T")[0], "%Y-%m-%d").date(),
+            repo=repo,
+            created=item.created_at.date(),
             merged=merged_date,
-            state=item['state']
+            state=item.state
 
         )
+        logger.info(f"Created PR: {pr.title} by {pr.author.login}")
+        return pr
 
     def _create_issue(self, item, author):
-        if not author or author.login not in djangonauts_dict.keys():
+        if not author or author.login not in self.djangonauts_dict.keys():
             return None
+
+        repo = item.repository_url.split("/repos/")[1]
+
         return Issue(
-            state=item["state"],
-            title=item["title"],
-            assignee=item.get("assignee"),
+            title=item.title,
+            url=item.html_url,
             author=author,
-            url=item["url"],
-            created=datetime.datetime.strptime(item["createdAt"].split("T")[0], "%Y-%m-%d").date(),
+            repo=repo,
+            created=item.created_at.date(),
+            state=item.state,
         )
 
     def export_report(self):
@@ -89,37 +108,82 @@ class DjangonautsReport:
         issues = self.results.issues
 
         pr_authors = self.results.get_pr_authors()
-        djangonauts_prs_authors = [djangonauts_dict[author.login] for author in pr_authors]
+        djangonauts_prs_authors = [self.djangonauts_dict[author.login] for author in pr_authors]
         issue_authors = self.results.get_issue_authors()
-        djangonauts_issues_authors = [djangonauts_dict[author.login] for author in issue_authors]
+        djangonauts_issues_authors = [self.djangonauts_dict[author.login] for author in issue_authors]
 
         nr_pr_open = self.results.count_open_prs()
         nr_pr_closed = self.results.count_closed_prs()
         nr_pr_merged = self.results.count_merged_prs()
-        nr_open_issue = self.results.count_open_issues()
+        nr_issue = self.results.count_issues()
 
         with open(self.output_file, "a", encoding="utf-8") as f:
-            f.write(
-                f"\n=== Djangonauts Report ({self.start_date} → {self.end_date}) ===\n"
-                f"Open PRs: {nr_pr_open}, Merged: {nr_pr_merged}, Closed: {nr_pr_closed} , Issue: {nr_open_issue}\n"
-                f"Djangonaut Authors: {', '.join(author_name for author_name in djangonauts_prs_authors)}\n"
-                f"{'\n--Merged--\n' if nr_pr_merged else ''}"
-                f"{'\n\n'.join('🎉 ' + pr.title + '\n' + pr.author.name + '\n' + pr.url for pr in prs if pr.merged) if nr_pr_merged else '\n\nNo merged PRs\n'}"
 
-                f"{'\n\n--Opened--\n' if nr_pr_open else ''}"
-                f"{'\n\n'.join('✨ ' + pr.title + '\n' + pr.author.name + ' \n' + pr.url for pr in prs if pr.is_open()) if nr_pr_open else '\n\nNo opened PRs\n'}"
-                
-                f"{'\n\n--Closed--\n' if nr_pr_closed else ''}"
-                f"{'\n\n'.join('🚧 ' + pr.title + '\n' + pr.author.name + ' \n' + pr.url for pr in prs if pr.is_closed()) if nr_pr_closed else '\n\nNo closed PRs\n'}"
+            lines = [f"\n=== Djangonauts Report ({self.start_date} → {self.end_date}) ===\n"]
 
-                f"{'\n--Issue--\n' if nr_open_issue else '\n\n--No Issue--\n\n'}"
-                f"Djangonaut Authors: {', '.join(author_name for author_name in djangonauts_issues_authors)}\n"
-                f" {'\n\n'.join('✏️ ' + i.title + '\n' + i.author.name + '\n' + i.url for i in issues) if nr_open_issue else ''}"
-                "====================================\n"
+            # Header
+            closed_prs_string = ""
+            if self.closed_prs:
+                closed_prs_string = f", Closed: {nr_pr_closed}" if nr_pr_closed else ""
+
+            lines.append(f"Open PRs: {nr_pr_open}, Merged: {nr_pr_merged}{closed_prs_string}, Issue: {nr_issue}")
+
+            lines.append(
+                f"Djangonaut Authors: {', '.join(djangonauts_prs_authors)}"
             )
+
+            # --merged prs--
+            if nr_pr_merged:
+                lines.append(f"\n--Merged--\n")
+                lines.append("\n\n".join(
+                    f"🎉 {pr.repo}\n{pr.title}\n{pr.author.name}\n{pr.url}"
+                    for pr in prs if pr.is_merged()
+                ))
+            else:
+                lines.append(f"\n\nNo merged PRs\n")
+
+            # -- opened prs--
+            if nr_pr_open:
+                lines.append(f"\n--Opened--\n")
+                lines.append("\n\n".join(
+                    f"✨{pr.repo}\n{pr.title}\n{pr.author.name}\n{pr.url}"
+                    for pr in prs if pr.is_open()
+                ))
+            else:
+                lines.append(f"\n\nNo opened PRs\n")
+
+            # --closed prs--
+            if self.closed_prs:
+                if nr_pr_closed:
+                    lines.append(f"\n--Closed--\n")
+                    lines.append("\n\n".join(
+                        f"🚧 {pr.repo}\n{pr.title}\n{pr.author.name}\n{pr.url}"
+                        for pr in prs if pr.is_closed()
+                    ))
+                else:
+                    lines.append("\n\nNo closed PRs\n")
+
+            # --issues--
+            if nr_issue:
+                lines.append("\n\n--Issue--\n")
+                lines.append(
+                    f"Djangonaut Authors: {', '.join(djangonauts_issues_authors)}\n"
+                )
+                lines.append("\n\n".join(
+                    f"✏️ {i.repo}\n{i.title}\n{i.author.name}\n{i.url}"
+                    for i in issues
+                ))
+            else:
+                lines.append("\n\n--No Issue--\n")
+
+            # outro line
+
+            lines.append("\n====================================\n")
+
+            f.write("\n".join(lines))
 
         logger.info(f"Report written to {self.output_file}")
 
     def run(self):
-        self.load_data()
+        self.load_data_from_api()
         self.export_report()

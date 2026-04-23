@@ -1,5 +1,3 @@
-import subprocess
-import json
 import datetime
 from core.config import logger
 import argparse
@@ -10,28 +8,6 @@ def parse_date(datestr: str):
         return datetime.date.fromisoformat(datestr)
     except ValueError:
         raise ValueError(f"Invalid date format '{datestr}'. Should be YYYY-MM-DD.")
-
-
-def send_command(command: str):
-    process = subprocess.Popen(
-        command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    output, error = process.communicate()
-    logger.debug(f'Executed: {command}')
-
-    if error:
-        logger.warning(f"stderr: {error.decode('utf-8').strip()}")
-
-    decoded = output.decode('utf-8').strip()
-    if not decoded:
-        logger.warning("Empty command output.")
-        return []
-
-    try:
-        return json.loads(decoded)
-    except json.JSONDecodeError:
-        logger.warning(f"Invalid JSON: {decoded}")
-        return []
 
 
 def create_argument_parser():
@@ -60,5 +36,12 @@ def create_argument_parser():
         '-v',
         '--verbose',
         action='store_true'
+    )
+
+    parser.add_argument(
+        '--closed-prs',
+        action='store_true',
+        help='Shows closed PRs. Default False',
+        default=False
     )
     return parser
