@@ -115,7 +115,7 @@ class DjangonautsReport:
         nr_pr_open = self.results.count_open_prs()
         nr_pr_closed = self.results.count_closed_prs()
         nr_pr_merged = self.results.count_merged_prs()
-        nr_open_issue = self.results.count_open_issues()
+        nr_issue = self.results.count_issues()
 
         with open(self.output_file, "a", encoding="utf-8") as f:
 
@@ -126,7 +126,7 @@ class DjangonautsReport:
             if self.closed_prs:
                 closed_prs_string = f", Closed: {nr_pr_closed}" if nr_pr_closed else ""
 
-            lines.append(f"Open PRs: {nr_pr_open}, Merged: {nr_pr_merged}{closed_prs_string}, Issue: {nr_open_issue}")
+            lines.append(f"Open PRs: {nr_pr_open}, Merged: {nr_pr_merged}{closed_prs_string}, Issue: {nr_issue}")
 
             lines.append(
                 f"Djangonaut Authors: {', '.join(djangonauts_prs_authors)}"
@@ -164,7 +164,7 @@ class DjangonautsReport:
                     lines.append("\n\nNo closed PRs\n")
 
             # --issues--
-            if nr_open_issue:
+            if nr_issue:
                 lines.append("\n\n--Issue--\n")
                 lines.append(
                     f"Djangonaut Authors: {', '.join(djangonauts_issues_authors)}\n"

@@ -39,8 +39,6 @@ class Issue:
     repo: str
     created: datetime.date = None
 
-    def is_open(self) -> bool:
-        return self.state == 'open'
 
 @dataclasses.dataclass
 class Team:
@@ -72,9 +70,6 @@ class Results:
     def get_closed_prs(self) -> typing.List[PR]:
         return list(filter(lambda pr: pr.is_closed(), self.prs))
 
-    def get_open_issues(self) -> typing.List[Issue]:
-        return list(filter(lambda issue: issue.is_open(), self.issues))
-
     def get_pr_authors(self) -> typing.List[Author]:
         return list(set(pr.author for pr in self.prs))
 
@@ -90,5 +85,5 @@ class Results:
     def count_closed_prs(self) -> int:
         return len(self.get_closed_prs())
 
-    def count_open_issues(self) -> int:
-        return len(self.get_open_issues())
+    def count_issues(self) -> int:
+        return len(self.issues)
