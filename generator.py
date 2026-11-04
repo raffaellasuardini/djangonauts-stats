@@ -17,26 +17,18 @@ class DjangonautsReport:
         self.results = Results()
 
     def load_data(self):
+        seen_urls = set()
         for repo in repos:
             logger.info(f"Loading data from {repo}")
-
-            #load open pr
-            for item in load_prs(repo, self.start_date, self.end_date, 'open'):
-                author = self._create_author(item.get('author'))
-                pr = self._create_pr(item, author)
-                if author.login in djangonauts_dict.keys():
-                    self.results.prs.append(pr)
-            #load merged pr
-            for item in load_prs(repo, self.start_date, self.end_date, 'merged'):
-                author = self._create_author(item.get('author'))
-                pr = self._create_pr(item, author)
-                if author.login in djangonauts_dict.keys():
-                    self.results.prs.append(pr)
-            #load closed pr
-            for item in load_prs(repo, self.start_date, self.end_date, 'closed'):
-                author = self._create_author(item.get('author'))
-                pr = self._create_pr(item, author)
-                if author.login in djangonauts_dict.keys():
+            for event in ("created", "merged", "closed"):
+                for item in load_prs(repo, self.start_date, self.end_date, event):
+                    author = self._create_author(item.get("author"))
+                    pr = self._create_pr(item, author)
+    
+                    if pr is None or pr.url in seen_urls:
+                        continue
+        
+                    seen_urls.add(pr.url)
                     self.results.prs.append(pr)
             #load open issue
             for item in load_issues(repo, self.start_date, self.end_date):
@@ -60,6 +52,11 @@ class DjangonautsReport:
             merged_date = datetime.datetime.strptime(item.get('mergedAt').split("T")[0], "%Y-%m-%d").date()
         else:
             merged_date = None
+        if item.get('closedAt'):
+            closed_date = datetime.datetime.strptime(item.get('closedAt').split("T")[0], "%Y-%m-%d").date()
+        else:
+            closed_date = None
+
 
         return PR(
             title=item["title"],
@@ -68,6 +65,7 @@ class DjangonautsReport:
             author=author,
             created=datetime.datetime.strptime(item["createdAt"].split("T")[0], "%Y-%m-%d").date(),
             merged=merged_date,
+            closed=closed_date,
             state=item['state']
 
         )
