@@ -17,16 +17,17 @@ class PR:
     author: Author
     state: str
     created: datetime.date = None
+    closed: datetime.date = None
     merged: datetime.date = None
 
     def is_open(self) -> bool:
         return self.state == "OPEN"
 
     def is_merged(self) -> bool:
-        return bool(self.merged)
+        return bool(self.merged) and bool(self.closed)
 
-    def is_closed(self):
-        return self.state == "CLOSED" and not bool(self.merged)
+    def is_closed(self) -> bool:
+        return bool(self.closed) and not bool(self.merged)
 
 
 @dataclasses.dataclass

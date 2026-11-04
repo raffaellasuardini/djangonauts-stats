@@ -8,10 +8,23 @@ def load_repositories(organization: str):
     return send_command(command)
 
 
-def load_prs(repo: str, start_date, end_date, state='open'):
-    search = f"is:pr created:{start_date}..{end_date}" if state != 'merged' else f"is:pr merged:{start_date}..{end_date}"
+def load_prs(repo: str, start_date, end_date, event):
+    searches = {
+        "created": f"is:pr created:{start_date}..{end_date}",
+        "merged": f"is:pr merged:{start_date}..{end_date}",
+        "closed": f"is:pr closed:{start_date}..{end_date}",
+    }
+
+    states= {
+        "created": "all",
+        "merged": "merged",
+        "closed": "closed"
+    }
+
+    search = searches[event]
+    state = states[event]
     command = (f'gh pr list -S "{search}" --repo {repo} --state {state} '
-               f'--json title,number,url,author,createdAt,mergedAt,state')
+               f'--json title,number,url,author,createdAt,closedAt,mergedAt,state')
     return send_command(command)
 
 
