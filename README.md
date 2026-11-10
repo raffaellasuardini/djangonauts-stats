@@ -13,6 +13,10 @@ A script that retrieve the Pull Request (open, merged, and closed but not merged
    pip install uv
    uv sync
    ```
+4. Copy your Github Token in your .env
+  ```bash
+  cp .envtemplate .env
+  ```
 
 # Usage
 Run `python main.py` without any arguments to pull last week's PR and Issue. 
