@@ -21,7 +21,7 @@ class DjangonautsReport:
 
         token = GITHUB_TOKEN
         if not token:
-            raise ValueError('GITHUB_TOKEN environment variable not set')
+            raise ValueError('GH_TOKEN environment variable not set.')
         self.github = Github(token)
 
     def create_teams(self, repos):
