@@ -48,8 +48,7 @@ class DjangonautsReport:
                     name=self.djangonauts_dict[item.user.login.lower()]
                 )
                 pr = self._create_pr(author=djangonaut_author, item=item)
-                added = self.results.add_pr(pr)
-                if added:
+                if self.results.add_pr_if_new(pr):
                     logger.info(f"Appended PR, total now: {len(self.results.prs)}")
 
             for item in team_issues:

@@ -51,13 +51,13 @@ class Results:
     prs: typing.List[PR] = dataclasses.field(default_factory=list)
     issues: typing.List[Issue] = dataclasses.field(default_factory=list)
     teams: typing.List[Team] = dataclasses.field(default_factory=list)
-    _seen_pr_numbers: set[str] = dataclasses.field(default_factory=set)
+    _seen_urls: set[str] = dataclasses.field(default_factory=set)
 
-    def add_pr(self, pr: PR) -> bool:
+    def add_pr_if_new(self, pr: PR) -> bool:
         """Add a PR to the list of PRs if it's not present"""
-        if pr.number in self._seen_pr_numbers:
+        if pr.url in self._seen_urls:
             return False
-        self._seen_pr_numbers.add(pr.number)
+        self._seen_urls.add(pr.url)
         self.prs.append(pr)
         return True
 
